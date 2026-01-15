@@ -66,10 +66,6 @@ public class Robot extends TimedRobot
    * <p>This runs after the mode specific periodic functions, but before LiveWindow and
    * SmartDashboard integrated updating.
    */
-
-   private XboxController xboxController = new XboxController(0); // 0 is the port number
-   
-
   @Override
   public void robotPeriodic()
   
@@ -78,13 +74,6 @@ public class Robot extends TimedRobot
     // commands, running already-scheduled commands, removing finished or interrupted commands,
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
-    System.out.println(m_robotContainer.limelight_aim_proportional());
-    if(xboxController.getRawButton(XboxController.Button.kA.value) == true)
-    {
-      swervelib.SwerveInputStream driveAngularVelocity = driveAngularVelocity.withControllerRotationAxis(
-        -1, -1
-      );
-    }
     CommandScheduler.getInstance().run();
   }
 

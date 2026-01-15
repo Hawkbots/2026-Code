@@ -48,4 +48,10 @@ public final class Constants
     public static final double RIGHT_X_DEADBAND = 0.1;
     public static final double TURN_CONSTANT    = 6;
   }
+
+  public static class LimelightConstants
+  {
+    public static final double kMaxSpeed = 3.0; // 3 meters per second
+    public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+  }
 }
