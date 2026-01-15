@@ -15,6 +15,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,6 +26,11 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
 import swervelib.SwerveInputStream;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.TimedRobot;
+
+import edu.wpi.first.wpilibj.XboxController;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -50,7 +56,7 @@ public class RobotContainer {
    * Converts driver input into a field-relative ChassisSpeeds that is controlled
    * by angular velocity.
    */
-  SwerveInputStream driveAngularVelocity;
+  static SwerveInputStream driveAngularVelocity;
 
   /**
    * Clone's the angular velocity input stream and converts it to a fieldRelative
@@ -67,13 +73,50 @@ public class RobotContainer {
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
-  public RobotContainer() {
+  double limelight_aim_proportional()
+  {    
+    // kP (constant of proportionality)
+    // this is a hand-tuned number that determines the aggressiveness of our proportional control loop
+    // if it is too high, the robot will oscillate.
+    // if it is too low, the robot will never reach its target
+    // if the robot never turns in the correct direction, kP should be inverted.
+    double kP = .035;
 
+    // tx ranges from (-hfov/2) to (hfov/2) in degrees. If your target is on the rightmost edge of 
+    // your limelight 3 feed, tx should return roughly 31 degrees.
+    double targetingAngularVelocity = LimelightHelpers.getTX("limelight") * kP;
+
+    // convert to radians per second for our drive method
+    targetingAngularVelocity *= Drivetrain.kMaxAngularSpeed;
+
+    //invert since tx is positive when the target is to the right of the crosshair
+    targetingAngularVelocity *= -1.0;
+
+    return targetingAngularVelocity;
+  }
+
+  // simple proportional ranging control with Limelight's "ty" value
+  // this works best if your Limelight's mount height and target mount height are different.
+  // if your limelight and target are mounted at the same or similar heights, use "ta" (area) for target ranging rather than "ty"
+  double limelight_range_proportional()
+  {    
+    double kP = .1;
+    double targetingForwardSpeed = LimelightHelpers.getTY("limelight") * kP;
+    targetingForwardSpeed *= Drivetrain.kMaxSpeed;
+    targetingForwardSpeed *= -1.0;
+    return targetingForwardSpeed;
+  }
+
+
+  public RobotContainer() {
+ 
     driveAngularVelocity = SwerveInputStream.of(drivebase.getSwerveDrive(), driverXbox::getLeftY, driverXbox::getLeftX);
     driveAngularVelocity = driveAngularVelocity.withControllerRotationAxis(driverXbox::getRightX);
     driveAngularVelocity = driveAngularVelocity.deadband(OperatorConstants.DEADBAND);
-    driveAngularVelocity = driveAngularVelocity.scaleTranslation(0.2);
+    driveAngularVelocity = driveAngularVelocity.scaleTranslation(0.1);
     driveAngularVelocity = driveAngularVelocity.allianceRelativeControl(true);
+    
+  
 
     driveDirectAngle = driveAngularVelocity.copy();
     driveDirectAngle = driveDirectAngle.withControllerHeadingAxis(driverXbox::getRightX, driverXbox::getRightY);
